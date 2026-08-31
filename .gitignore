@@ -1,0 +1,11 @@
+target/
+*.class
+*.log
+.idea/
+*.iml
+.vscode/
+storage/attachments/*
+storage/import-errors/*
+!storage/attachments/.gitkeep
+!storage/import-errors/.gitkeep
+.env
