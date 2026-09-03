@@ -1,1 +1,78 @@
+spring:
+  application:
+    name: activation-education-eforms-dashboard
+  profiles:
+    active: ${APP_PROFILE:dev}
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:10MB}
+      max-request-size: ${MAX_REQUEST_SIZE:15MB}
+  jackson:
+    default-property-inclusion: non_null
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
 
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      timeout: ${SESSION_TIMEOUT:30m}
+      cookie:
+        http-only: true
+        secure: ${COOKIE_SECURE:true}
+        same-site: strict
+  error:
+    include-message: never
+    include-stacktrace: never
+    whitelabel:
+      enabled: false
+
+app:
+  security:
+    max-failed-attempts: ${MAX_FAILED_ATTEMPTS:5}
+    lock-duration-minutes: ${LOCK_DURATION_MINUTES:15}
+    force-password-change-on-first-login: true
+  file-storage:
+    root-location: ${FILE_STORAGE_ROOT:./storage/attachments}
+    max-file-size-mb: ${ATTACHMENT_MAX_MB:10}
+    allowed-extensions: pdf,docx,xlsx,xls,png,jpg,jpeg,txt,sql
+  import:
+    template-location: ${IMPORT_TEMPLATE_LOCATION:./storage/templates}
+    error-export-location: ${IMPORT_ERROR_LOCATION:./storage/import-errors}
+  aging:
+    healthy-max-days: 3
+    attention-max-days: 7
+    at-risk-max-days: 15
+  sla:
+    low-risk-max: 40
+    medium-risk-max: 70
+  notifications:
+    no-activity-alert-days: 3
+    approaching-production-days: 2
+  team-name: "Activation Education EForms Team"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    com.tcsion.eforms: INFO
+    org.springframework.security: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
