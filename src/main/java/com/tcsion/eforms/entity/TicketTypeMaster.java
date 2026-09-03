@@ -3,13 +3,9 @@ import lombok.*;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "activity_type_master")
+@Table(name = "ticket_type_master")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class ActivityTypeMaster {
-    public static final String FRONTEND_CHANGES = "FRONTEND_CHANGES";
-    public static final String BACKEND_CHANGES = "BACKEND_CHANGES";
-    public static final String DATABASE_CHANGES = "DATABASE_CHANGES";
-
+public class TicketTypeMaster {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "type_code", nullable = false, unique = true, length = 60)
