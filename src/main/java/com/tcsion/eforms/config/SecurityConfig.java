@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -54,7 +55,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-            .authorizeRequests()
+            .authorizeRequests(authorize -> authorize
                 .antMatchers("/login", "/forgot-password", "/reset-password", "/error",
                               "/css/**", "/js/**", "/img/**", "/webjars/**", "/favicon.ico").permitAll()
                 .antMatchers("/access-denied").permitAll()
@@ -67,8 +68,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/tickets/all").hasAnyRole(Role.TEAM_LEAD, Role.TECHNICAL_LEAD, Role.DASHBOARD_HANDLER)
                 .antMatchers("/api/admin/**").hasAnyRole(Role.TEAM_LEAD, Role.SYSTEM_ADMIN)
                 .anyRequest().authenticated()
-            .and()
-            .formLogin()
+            )
+            .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/perform-login")
                 .usernameParameter("username")
@@ -76,34 +77,33 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .successHandler(successHandler)
                 .failureHandler(failureHandler)
                 .permitAll()
-            .and()
-            .logout()
+            )
+            .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout=true")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
-            .and()
-            .sessionManagement()
+            )
+            .sessionManagement(session -> session
                 .sessionFixation().migrateSession()
                 .maximumSessions(1)
                 .expiredUrl("/login?expired=true")
                 .sessionRegistry(sessionRegistry())
-            .and()
-            .and()
-            .exceptionHandling()
+            )
+            .exceptionHandling(exceptions -> exceptions
                 .accessDeniedHandler(accessDeniedHandler)
-            .and()
-            .csrf()
+            )
+            .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            .and()
-            .headers()
-                .contentTypeOptions().and()
-                .frameOptions().sameOrigin().and()
-                .httpStrictTransportSecurity()
-                    .includeSubDomains(true)
-                    .maxAgeInSeconds(31536000)
-                    .and()
+            )
+            .headers(headers -> headers
+                .contentTypeOptions(Customizer.withDefaults())
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                .httpStrictTransportSecurity(hsts -> hsts
+                        .includeSubDomains(true)
+                        .maxAgeInSeconds(31536000)
+                )
                 .addHeaderWriter((request, response) -> {
                     response.setHeader("X-XSS-Protection", "1; mode=block");
                     response.setHeader("Referrer-Policy", "same-origin");
@@ -111,6 +111,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                             "default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
                             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
                             "img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net;");
-                });
+                })
+            );
     }
 }
