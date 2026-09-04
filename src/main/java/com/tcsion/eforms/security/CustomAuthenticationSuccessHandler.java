@@ -1,5 +1,6 @@
 package com.tcsion.eforms.security;
 
+import com.tcsion.eforms.service.AuditService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
@@ -15,12 +16,14 @@ import java.io.IOException;
 public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
 
     private final LoginAttemptService loginAttemptService;
+    private final AuditService auditService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                          Authentication authentication) throws IOException, ServletException {
         String username = authentication.getName();
         loginAttemptService.onSuccessfulLogin(username, request.getRemoteAddr());
+        auditService.logAs(username, "LOGIN_SUCCESS", "USER", null, null, null, null, "WEB");
 
         CustomUserDetails principal = (CustomUserDetails) authentication.getPrincipal();
         if (principal.isForcePasswordChange()) {
