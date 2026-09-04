@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Daily Report - Activation Education EForms</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div class="d-flex">
+  <div th:replace="~{fragments/layout :: sidebar}"></div>
+  <div class="ae-content flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4>Daily Report — <span th:text="${report.reportDate}"></span></h4>
+      <a class="btn btn-sm btn-outline-primary" th:href="@{/reports/daily/export/excel(date=${selectedDate})}">Export Excel</a>
+    </div>
+    <form class="row g-2 my-2" method="get">
+      <div class="col-md-3"><input type="date" name="date" class="form-control" th:value="${selectedDate}"/></div>
+      <div class="col-md-3">
+        <select name="customerId" class="form-select">
+          <option value="">All Customers</option>
+          <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.customerName}"></option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="developerId" class="form-select">
+          <option value="">All Developers</option>
+          <option th:each="d : ${developers}" th:value="${d.id}" th:text="${d.fullName}"></option>
+        </select>
+      </div>
+      <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filter</button></div>
+    </form>
+
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-md-2"><div class="card card-metric p-2"><div class="metric-value" th:text="${#lists.size(report.forwardedFromYesterday)}"></div><div class="metric-label">Forwarded From Yesterday</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2"><div class="metric-value" th:text="${#lists.size(report.openedToday)}"></div><div class="metric-label">Opened Today</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2"><div class="metric-value" th:text="${#lists.size(report.onHoldToday)}"></div><div class="metric-label">On Hold</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2"><div class="metric-value" th:text="${#lists.size(report.reassignedToday)}"></div><div class="metric-label">Reassigned</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2 border-success"><div class="metric-value text-success" th:text="${#lists.size(report.closedToday)}"></div><div class="metric-label">Closed Today</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2"><div class="metric-value" th:text="${#lists.size(report.forwardedForNextDay)}"></div><div class="metric-label">Forwarded For Next Day</div></div></div>
+    </div>
+
+    <h6>Forwarded For Next Day (Details)</h6>
+    <div class="table-responsive card p-2">
+      <table class="table table-sm">
+        <thead><tr><th>Ticket #</th><th>Customer</th><th>Developer</th><th>Status</th><th>Est. Production</th><th>SLA State</th><th>Risk</th></tr></thead>
+        <tbody>
+        <tr th:each="t : ${report.forwardedForNextDay}">
+          <td><a th:href="@{'/tickets/' + ${t.id}}" th:text="${t.ticketNumber}"></a></td>
+          <td th:text="${t.customer != null ? t.customer.customerName : ''}"></td>
+          <td th:text="${t.assignedUser != null ? t.assignedUser.fullName : 'Unassigned'}"></td>
+          <td th:text="${t.currentStatus.displayName}"></td>
+          <td th:text="${t.estimatedProductionDate}"></td>
+          <td th:text="${t.slaState}"></td>
+          <td th:text="${t.slaRiskCategory}"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

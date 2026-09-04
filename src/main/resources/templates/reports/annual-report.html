@@ -1,1 +1,32 @@
-
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Annual Report - Activation Education EForms</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div class="d-flex">
+  <div th:replace="~{fragments/layout :: sidebar}"></div>
+  <div class="ae-content flex-grow-1">
+    <h4>Annual Report — <span th:text="${report.year}"></span></h4>
+    <div class="row g-3 mb-3">
+      <div class="col-md-4"><div class="card card-metric p-3"><div class="metric-value" th:text="${report.totalVolume}"></div><div class="metric-label">Total Ticket Volume</div></div></div>
+      <div class="col-md-4"><div class="card card-metric p-3 border-success"><div class="metric-value text-success" th:text="${report.movedToProduction}"></div><div class="metric-label">Moved To Production</div></div></div>
+      <div class="col-md-4"><div class="card card-metric p-3"><div class="metric-value" th:text="${report.openPending}"></div><div class="metric-label">Open / Pending</div></div></div>
+    </div>
+    <h6>Monthly Trend</h6>
+    <canvas id="monthlyChart" height="100"></canvas>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script th:inline="javascript">
+  var monthlyTrend = /*[[${report.monthlyTrend}]]*/ {};
+  var labels = Object.keys(monthlyTrend);
+  var data = Object.values(monthlyTrend);
+  new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar', data: { labels: labels, datasets: [{ label: 'Tickets Created', data: data, backgroundColor: '#2b6cb0' }] }
+  });
+</script>
+</body>
+</html>

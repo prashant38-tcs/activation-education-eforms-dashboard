@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Quarterly Report - Activation Education EForms</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div class="d-flex">
+  <div th:replace="~{fragments/layout :: sidebar}"></div>
+  <div class="ae-content flex-grow-1">
+    <h4>Quarterly Report — Q<span th:text="${report.quarter}"></span> <span th:text="${report.year}"></span></h4>
+    <div class="row g-3 mb-3">
+      <div class="col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${report.newTickets}"></div><div class="metric-label">New Tickets</div></div></div>
+      <div class="col-md-3"><div class="card card-metric p-3 border-success"><div class="metric-value text-success" th:text="${report.movedToProduction}"></div><div class="metric-label">Moved To Production</div></div></div>
+      <div class="col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${report.openTickets}"></div><div class="metric-label">Open Tickets</div></div></div>
+      <div class="col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${report.onHoldTickets}"></div><div class="metric-label">On Hold</div></div></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6"><h6>Customer-wise Breakdown</h6>
+        <ul class="list-group"><li class="list-group-item d-flex justify-content-between" th:each="e : ${report.customerBreakdown}"><span th:text="${e.key}"></span><span th:text="${e.value}"></span></li></ul>
+      </div>
+      <div class="col-md-6"><h6>Status-wise Breakdown</h6>
+        <ul class="list-group"><li class="list-group-item d-flex justify-content-between" th:each="e : ${report.statusBreakdown}"><span th:text="${e.key}"></span><span th:text="${e.value}"></span></li></ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
