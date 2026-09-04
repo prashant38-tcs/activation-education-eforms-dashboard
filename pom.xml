@@ -164,10 +164,10 @@
                     <target>1.8</target>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </path>
-                        <path>
+                               <groupId>org.projectlombok</groupId>
+                               <artifactId>lombok</artifactId>
+                               <version>${lombok.version}</version>
+                  </path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${mapstruct.version}</version>
