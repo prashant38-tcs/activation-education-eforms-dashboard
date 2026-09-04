@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title th:text="${ticket.ticketNumber} + ' - Activation Education EForms'">Ticket Detail</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div class="d-flex">
+  <div th:replace="~{fragments/layout :: sidebar}"></div>
+  <div class="ae-content flex-grow-1">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a th:href="@{/tickets/my}">Tickets</a></li>
+      <li class="breadcrumb-item active" th:text="${ticket.ticketNumber}"></li>
+    </ol></nav>
+
+    <div class="card p-3 mb-3">
+      <div class="d-flex justify-content-between flex-wrap">
+        <div>
+          <h5 th:text="${ticket.ticketNumber} + ' — ' + ${ticket.ticketTitle}"></h5>
+          <p class="text-muted mb-1" th:text="${ticket.ticketDescription}"></p>
+          <span class="badge bg-secondary" th:text="${ticket.currentStatus.displayName}"></span>
+          <span th:class="'badge badge-risk-' + ${#strings.toLowerCase(ticket.slaRiskCategory)}" th:text="${ticket.slaRiskCategory} + ' Risk'"></span>
+          <span th:if="${ticket.onHold}" class="badge bg-warning text-dark">On Hold</span>
+          <span class="badge bg-light text-dark" th:text="'Aging: ' + ${ticket.agingDays} + 'd'"></span>
+        </div>
+        <div class="text-end small text-muted">
+          <div>Customer: <strong th:text="${ticket.customer != null ? ticket.customer.customerName : '-'}"></strong></div>
+          <div>Developer: <strong th:text="${ticket.assignedUser != null ? ticket.assignedUser.fullName : 'Unassigned'}"></strong></div>
+          <div>Priority: <strong th:text="${ticket.priority != null ? ticket.priority.priorityName : '-'}"></strong></div>
+          <div>Est. Production: <strong th:text="${ticket.estimatedProductionDate}"></strong></div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="nav nav-tabs" id="ticketTabs">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-status">Status</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-activity">Activity Update</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-technical">Technical Changes</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-comments">Comments</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-attachments">Attachments</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-timeline">Timeline</button></li>
+      <li class="nav-item" th:if="${isAdmin}"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-reassign">Reassign</button></li>
+    </ul>
+    <div class="tab-content card p-3">
+
+      <div class="tab-pane fade show active" id="tab-status">
+        <form method="post" th:action="@{'/tickets/' + ${ticket.id} + '/status'}">
+          <input type="hidden" name="expectedVersion" th:value="${ticket.version}"/>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Target Status</label>
+              <select name="targetStatusCode" class="form-select" required>
+                <option value="WORK_IN_PROGRESS">Work In Progress</option>
+                <option value="UAT_IN_PROGRESS">UAT In Progress</option>
+                <option value="QA_IN_PROGRESS">QA In Progress</option>
+                <option value="REASSIGNED_TO_FRAMEWORK_TEAM">Reassigned To Framework Team</option>
+                <option value="REASSIGNED_TO_OTHER_TEAM">Reassigned To Other Team</option>
+                <option value="ON_HOLD">On Hold</option>
+                <option value="MOVED_TO_PRODUCTION">Moved To Production</option>
+                <option value="REOPENED">Reopened</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div class="col-md-4"><label class="form-label">Progress %</label><input type="number" min="0" max="100" name="progressPercentage" class="form-control"/></div>
+            <div class="col-md-4"><label class="form-label">Hold Reason (if On Hold)</label><input name="holdReason" class="form-control"/></div>
+            <div class="col-md-4"><label class="form-label">Target Team (reassignment)</label>
+              <select name="targetTeamId" class="form-select"><option value="">-</option>
+                <option th:each="tm : ${teams}" th:value="${tm.id}" th:text="${tm.teamName}"></option></select>
+            </div>
+            <div class="col-md-4"><label class="form-label">Actual Production Date</label><input type="date" name="actualProductionDate" class="form-control"/></div>
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check"><input class="form-check-input" type="checkbox" name="technicalReadinessConfirmed" value="true"/>
+                <label class="form-check-label">Technical readiness confirmed (required for Production)</label></div>
+            </div>
+            <div class="col-12"><label class="form-label">Remark *</label><textarea name="remark" class="form-control" rows="2" required></textarea></div>
+          </div>
+          <button type="submit" class="btn btn-primary mt-3" data-bs-toggle="tooltip" title="Every status change requires a remark">Update Status</button>
+        </form>
+      </div>
+
+      <div class="tab-pane fade" id="tab-activity">
+        <form method="post" th:action="@{'/tickets/' + ${ticket.id} + '/activity'}">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Activity Type</label>
+              <select name="activityTypeId" class="form-select" required>
+                <option th:each="at : ${activityTypes}" th:value="${at.id}" th:text="${at.typeName}"></option>
+              </select>
+            </div>
+            <div class="col-md-4"><label class="form-label">Progress %</label><input type="number" min="0" max="100" name="progressPercentage" class="form-control"/></div>
+            <div class="col-md-4"><label class="form-label">Hours Spent</label><input type="number" step="0.5" name="hoursSpent" class="form-control"/></div>
+            <div class="col-12"><label class="form-label">Work Summary</label><input name="workSummary" class="form-control"/></div>
+            <div class="col-12"><label class="form-label">Detailed Remark</label><textarea name="detailedRemark" class="form-control" rows="2"></textarea></div>
+            <div class="col-md-6"><label class="form-label">Blocker</label><input name="blocker" class="form-control"/></div>
+            <div class="col-md-6"><label class="form-label">Root Cause</label><input name="rootCause" class="form-control"/></div>
+            <div class="col-md-6"><label class="form-label">Action Taken</label><input name="actionTaken" class="form-control"/></div>
+            <div class="col-md-6"><label class="form-label">Next Action</label><input name="nextAction" class="form-control"/></div>
+            <div class="col-md-6"><label class="form-label">Dependency</label><input name="dependency" class="form-control"/></div>
+            <div class="col-md-6"><label class="form-label">Estimated Completion Date</label><input type="date" name="estimatedCompletionDate" class="form-control"/></div>
+          </div>
+          <button type="submit" class="btn btn-primary mt-3">Save Activity</button>
+        </form>
+        <hr/>
+        <h6>Activity History</h6>
+        <ul class="timeline">
+          <li th:each="a : ${activities}">
+            <strong th:text="${a.activityDatetime}"></strong> — <span th:text="${a.updatedBy.fullName}"></span>
+            <div th:text="${a.workSummary}"></div>
+            <div class="text-muted small" th:text="${a.detailedRemark}"></div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="tab-pane fade" id="tab-technical">
+        <div class="accordion" id="techAccordion">
+          <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#feCollapse">Frontend Changes</button></h2>
+            <div id="feCollapse" class="accordion-collapse collapse show">
+              <div class="accordion-body">
+                <form method="post" th:action="@{'/tickets/' + ${ticket.id} + '/frontend-change'}" class="row g-2 mb-3">
+                  <div class="col-md-3"><input name="screenFormName" class="form-control form-control-sm" placeholder="Screen/Form Name"/></div>
+                  <div class="col-md-3"><input name="htmlFileName" class="form-control form-control-sm" placeholder="HTML File"/></div>
+                  <div class="col-md-3"><input name="jsFileName" class="form-control form-control-sm" placeholder="JS File"/></div>
+                  <div class="col-md-3"><input name="cssFileName" class="form-control form-control-sm" placeholder="CSS File"/></div>
+                  <div class="col-12"><textarea name="changeDescription" class="form-control form-control-sm" placeholder="Change description"></textarea></div>
+                  <div class="col-12"><button class="btn btn-sm btn-primary">Add Frontend Change</button></div>
+                </form>
+                <table class="table table-sm"><thead><tr><th>Screen</th><th>Files</th><th>Description</th><th>Status</th></tr></thead>
+                <tbody><tr th:each="fc : ${frontendChanges}">
+                  <td th:text="${fc.screenFormName}"></td>
+                  <td th:text="${fc.htmlFileName} + ' / ' + ${fc.jsFileName} + ' / ' + ${fc.cssFileName}"></td>
+                  <td th:text="${fc.changeDescription}"></td>
+                  <td th:text="${fc.deploymentStatus}"></td>
+                </tr></tbody></table>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#beCollapse">Backend Changes</button></h2>
+            <div id="beCollapse" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                <form method="post" th:action="@{'/tickets/' + ${ticket.id} + '/backend-change'}" class="row g-2 mb-3">
+                  <div class="col-md-3"><input name="jarName" class="form-control form-control-sm" placeholder="JAR Name *" required/></div>
+                  <div class="col-md-3"><input name="pipelineName" class="form-control form-control-sm" placeholder="Pipeline Name *" required/></div>
+                  <div class="col-md-3"><input name="className" class="form-control form-control-sm" placeholder="Class Name *" required/></div>
+                  <div class="col-md-3"><input name="methodName" class="form-control form-control-sm" placeholder="Method Name *" required/></div>
+                  <div class="col-md-4">
+                    <select name="deploymentStatus" class="form-select form-select-sm">
+                      <option value="PENDING">Pending</option><option value="DEVELOPMENT_IN_PROGRESS">Development In Progress</option>
+                      <option value="CODE_REVIEW_PENDING">Code Review Pending</option><option value="READY_FOR_PRODUCTION">Ready For Production</option>
+                      <option value="DEPLOYED">Deployed</option><option value="ROLLED_BACK">Rolled Back</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <select name="environment" class="form-select form-select-sm">
+                      <option th:each="e : ${environments}" th:value="${e.envCode}" th:text="${e.envName}"></option>
+                    </select>
+                  </div>
+                  <div class="col-12"><textarea name="changeDescription" class="form-control form-control-sm" placeholder="Change description"></textarea></div>
+                  <div class="col-12"><button class="btn btn-sm btn-primary">Add Backend Change</button></div>
+                </form>
+                <table class="table table-sm"><thead><tr><th>JAR</th><th>Class#Method</th><th>Pipeline</th><th>Status</th></tr></thead>
+                <tbody><tr th:each="bc : ${backendChanges}">
+                  <td th:text="${bc.jarName} + ' ' + ${bc.jarVersion}"></td>
+                  <td th:text="${bc.className} + '#' + ${bc.methodName}"></td>
+                  <td th:text="${bc.pipelineName}"></td>
+                  <td th:text="${bc.deploymentStatus}"></td>
+                </tr></tbody></table>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#dbCollapse">Database Changes</button></h2>
+            <div id="dbCollapse" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                <form method="post" th:action="@{'/tickets/' + ${ticket.id} + '/database-change'}" class="row g-2 mb-3">
+                  <div class="col-md-4"><input name="tableName" class="form-control form-control-sm" placeholder="Table Name"/></div>
+                  <div class="col-md-4"><input name="columnName" class="form-control form-control-sm" placeholder="Column Name"/></div>
+                  <div class="col-md-4"><input name="scriptFileName" class="form-control form-control-sm" placeholder="Script File Name"/></div>
+                  <div class="col-12"><textarea name="queryChangeDescription" class="form-control form-control-sm" placeholder="Query change description (metadata only - no SQL is executed here)"></textarea></div>
+                  <div class="col-12"><button class="btn btn-sm btn-primary">Add Database Change</button></div>
+                </form>
+                <table class="table table-sm"><thead><tr><th>Table</th><th>Column</th><th>Script</th><th>Status</th></tr></thead>
+                <tbody><tr th:each="dc : ${databaseChanges}">
+                  <td th:text="${dc.tableName}"></td><td th:text="${dc.columnName}"></td>
+                  <td th:text="${dc.scriptFileName}"></td><td th:text="${dc.executionStatus}"></td>
+                </tr></tbody></table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-comments">
+        <form method="post" th:action="@{'/tickets/' + ${ticket.id} + '/comment'}" class="mb-3">
+          <div class="row g-2">
+            <div class="col-md-3">
+              <select name="commentType" class="form-select form-select-sm">
+                <option value="GENERAL">General</option><option value="INTERNAL_NOTE">Internal Note</option>
+                <option value="BLOCKER">Blocker</option><option value="ROOT_CAUSE">Root Cause</option>
+                <option value="DEPENDENCY">Dependency</option><option value="NEXT_ACTION">Next Action</option>
+              </select>
+            </div>
+            <div class="col-md-7"><input name="commentText" class="form-control form-control-sm" placeholder="Comment" required/></div>
+            <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Add Comment</button></div>
+          </div>
+        </form>
+        <ul class="list-group">
+          <li class="list-group-item" th:each="c : ${comments}">
+            <div class="d-flex justify-content-between">
+              <strong th:text="${c.createdBy.fullName}"></strong>
+              <span class="text-muted small" th:text="${c.createdAt}"></span>
+            </div>
+            <span class="badge bg-light text-dark" th:text="${c.commentType}"></span>
+            <div th:text="${c.commentText}"></div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="tab-pane fade" id="tab-attachments">
+        <form method="post" th:action="@{'/tickets/' + ${ticket.id} + '/attachments'}" enctype="multipart/form-data" class="row g-2 mb-3">
+          <div class="col-md-5"><input type="file" name="file" class="form-control" required/></div>
+          <div class="col-md-4">
+            <select name="categoryId" class="form-select">
+              <option th:each="cat : ${attachmentCategories}" th:value="${cat.id}" th:text="${cat.categoryName}"></option>
+            </select>
+          </div>
+          <div class="col-md-3"><button class="btn btn-primary w-100">Upload</button></div>
+        </form>
+        <table class="table table-sm">
+          <thead><tr><th>File</th><th>Category</th><th>Uploaded By</th><th>Date</th><th></th></tr></thead>
+          <tbody><tr th:each="att : ${attachments}">
+            <td th:text="${att.originalFileName}"></td>
+            <td th:text="${att.category != null ? att.category.categoryName : ''}"></td>
+            <td th:text="${att.uploadedBy.fullName}"></td>
+            <td th:text="${att.uploadedAt}"></td>
+            <td><a th:href="@{'/tickets/' + ${ticket.id} + '/attachments/' + ${att.id} + '/download'}" class="btn btn-sm btn-outline-primary">Download</a></td>
+          </tr></tbody>
+        </table>
+      </div>
+
+      <div class="tab-pane fade" id="tab-timeline">
+        <ul class="timeline">
+          <li><strong>Created:</strong> <span th:text="${ticket.createdDate}"></span></li>
+          <li th:each="a : ${activities}">
+            <strong th:text="${a.newStatus != null ? a.newStatus.displayName : ''}"></strong> — <span th:text="${a.activityDatetime}"></span>
+            <div class="text-muted small" th:text="${a.detailedRemark}"></div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="tab-pane fade" id="tab-reassign" th:if="${isAdmin}">
+        <form method="post" th:action="@{'/tickets/' + ${ticket.id} + '/reassign'}" data-confirm="Reassign this ticket?">
+          <input type="hidden" name="expectedVersion" th:value="${ticket.version}"/>
+          <div class="row g-3">
+            <div class="col-md-5">
+              <label class="form-label">New Developer</label>
+              <select name="targetUserId" class="form-select">
+                <option value="">-</option>
+                <option th:each="d : ${developers}" th:value="${d.id}" th:text="${d.fullName}"></option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Target Team</label>
+              <select name="targetTeamId" class="form-select">
+                <option value="">-</option>
+                <option th:each="tm : ${teams}" th:value="${tm.id}" th:text="${tm.teamName}"></option>
+              </select>
+            </div>
+            <div class="col-12"><label class="form-label">Reason *</label><input name="reason" class="form-control" required/></div>
+          </div>
+          <button type="submit" class="btn btn-warning mt-3">Reassign Ticket</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
