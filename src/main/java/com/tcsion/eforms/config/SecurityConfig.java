@@ -6,11 +6,9 @@ import com.tcsion.eforms.security.CustomAuthenticationFailureHandler;
 import com.tcsion.eforms.security.CustomAuthenticationSuccessHandler;
 import com.tcsion.eforms.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.event.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,13 +19,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
-/**
- * Central security configuration. Every URL not explicitly listed below
- * requires authentication; role restrictions here are a defence-in-depth
- * layer only - authoritative checks are re-applied at the controller and
- * service level (see TicketAccessGuard) because hiding a menu item alone is
- * not sufficient authorization.
- */
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -48,12 +39,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
-    }
-
-    @Bean
-    public DefaultAuthenticationEventPublisher authenticationEventPublisher(
-            ApplicationEventPublisher applicationEventPublisher) {
-        return new DefaultAuthenticationEventPublisher(applicationEventPublisher);
     }
 
     @Bean
