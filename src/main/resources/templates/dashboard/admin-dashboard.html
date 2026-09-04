@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><title>Admin Dashboard - Activation Education EForms</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div class="d-flex">
+  <div th:replace="~{fragments/layout :: sidebar}"></div>
+  <div class="ae-content flex-grow-1">
+    <h4 class="mb-3">Team Dashboard</h4>
+    <div class="row g-3">
+      <div class="col-6 col-md-3"><a th:href="@{/tickets/all}" class="text-decoration-none"><div class="card card-metric p-3"><div class="metric-value" th:text="${totalOpenTickets}">0</div><div class="metric-label">Total Open Tickets</div></div></a></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${newTicketsToday}">0</div><div class="metric-label">New Tickets Today</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3 border-success"><div class="metric-value text-success" th:text="${movedToProductionToday}">0</div><div class="metric-label">Moved To Production Today</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${onHoldCount}">0</div><div class="metric-label">On Hold</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${wipCount}">0</div><div class="metric-label">Work In Progress</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${uatCount}">0</div><div class="metric-label">UAT In Progress</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${qaCount}">0</div><div class="metric-label">QA In Progress</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${frameworkPendingCount}">0</div><div class="metric-label">Framework Pending</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${otherTeamPendingCount}">0</div><div class="metric-label">Other-Team Pending</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3 border-danger"><div class="metric-value text-danger" th:text="${overdueCount}">0</div><div class="metric-label">Overdue</div></div></div>
+      <div class="col-6 col-md-3"><a th:href="@{/sla-risk}" class="text-decoration-none"><div class="card card-metric p-3 border-warning"><div class="metric-value text-warning" th:text="${slaAtRiskCount}">0</div><div class="metric-label">SLA At Risk</div></div></a></div>
+      <div class="col-6 col-md-3"><a th:href="@{/sla-risk}" class="text-decoration-none"><div class="card card-metric p-3 border-danger"><div class="metric-value text-danger" th:text="${slaBreachedCount}">0</div><div class="metric-label">SLA Breached</div></div></a></div>
+      <div class="col-6 col-md-3"><div class="card card-metric p-3"><div class="metric-value" th:text="${noUpdateCount}">0</div><div class="metric-label">Tickets Without Recent Update</div></div></div>
+    </div>
+
+    <div class="row mt-4 g-3">
+      <div class="col-md-6">
+        <div class="card p-3">
+          <h6>Aging Distribution</h6>
+          <canvas id="agingChart" height="180"></canvas>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6 class="mt-1">Recent Activity</h6>
+        <div class="table-responsive card p-2">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Ticket #</th><th>Customer</th><th>Status</th><th>Developer</th></tr></thead>
+            <tbody>
+            <tr th:each="t : ${recentTickets}">
+              <td><a th:href="@{'/tickets/' + ${t.id}}" th:text="${t.ticketNumber}"></a></td>
+              <td th:text="${t.customer != null ? t.customer.customerName : ''}"></td>
+              <td><span class="badge bg-secondary" th:text="${t.currentStatus.displayName}"></span></td>
+              <td th:text="${t.assignedUser != null ? t.assignedUser.fullName : 'Unassigned'}"></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script th:inline="javascript">
+  var buckets = /*[[${agingBuckets}]]*/ {};
+  var ctx = document.getElementById('agingChart');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Healthy (0-3d)', 'Needs Attention (4-7d)', 'At Risk (8-15d)', 'Critical (>15d)'],
+      datasets: [{ data: [buckets.HEALTHY||0, buckets.ATTENTION||0, buckets.AT_RISK||0, buckets.CRITICAL||0],
+        backgroundColor: ['#2f855a','#dd6b20','#ed8936','#c53030'] }]
+    }
+  });
+</script>
+</body>
+</html>
