@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Deployment Tracker - Activation Education EForms</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div class="d-flex">
+  <div th:replace="~{fragments/layout :: sidebar}"></div>
+  <div class="ae-content flex-grow-1">
+    <h4 class="mb-3">Deployment Tracker</h4>
+    <form class="row g-2 mb-3" method="get">
+      <div class="col-md-3">
+        <select name="environment" class="form-select">
+          <option value="">All Environments</option>
+          <option th:each="e : ${environments}" th:value="${e.envCode}" th:text="${e.envName}"></option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select">
+          <option value="">All Statuses</option>
+          <option value="PENDING">Pending</option><option value="COMPLETED">Completed</option>
+          <option value="FAILED">Failed</option><option value="ROLLED_BACK">Rolled Back</option>
+        </select>
+      </div>
+      <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filter</button></div>
+    </form>
+    <div class="table-responsive card p-2">
+      <table class="table table-sm">
+        <thead><tr><th>Ticket</th><th>Environment</th><th>JAR</th><th>Pipeline</th><th>Deployment Date</th><th>Owner</th><th>Status</th><th>Validation</th></tr></thead>
+        <tbody>
+        <tr th:each="d : ${deployments}">
+          <td><a th:if="${d.ticket != null}" th:href="@{'/tickets/' + ${d.ticket.id}}" th:text="${d.ticket.ticketNumber}"></a></td>
+          <td th:text="${d.environment}"></td>
+          <td th:text="${d.jarName} + ' ' + ${d.jarVersion}"></td>
+          <td th:text="${d.pipelineName}"></td>
+          <td th:text="${d.deploymentDate}"></td>
+          <td th:text="${d.deploymentOwner != null ? d.deploymentOwner.fullName : ''}"></td>
+          <td th:text="${d.deploymentStatus}"></td>
+          <td th:text="${d.validationStatus}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(deployments)}"><td colspan="8" class="empty-state">No deployment records found.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

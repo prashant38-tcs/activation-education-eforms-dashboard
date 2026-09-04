@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Executive Command Center - Activation Education EForms</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div class="d-flex">
+  <div th:replace="~{fragments/layout :: sidebar}"></div>
+  <div class="ae-content flex-grow-1">
+    <h4 class="mb-3">Executive Command Center</h4>
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-md-2"><div class="card card-metric p-2"><div class="metric-value" th:text="${totalOpen}"></div><div class="metric-label">Total Open</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2 border-danger"><div class="metric-value text-danger" th:text="${criticalAging}"></div><div class="metric-label">Critical Aging</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2 border-danger"><div class="metric-value text-danger" th:text="${highSlaRisk}"></div><div class="metric-label">High SLA Risk</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2 border-danger"><div class="metric-value text-danger" th:text="${slaBreached}"></div><div class="metric-label">SLA Breached</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2 border-success"><div class="metric-value text-success" th:text="${productionMovements}"></div><div class="metric-label">Production Today</div></div></div>
+      <div class="col-6 col-md-2"><div class="card card-metric p-2"><div class="metric-value" th:text="${noUpdate}"></div><div class="metric-label">No Update</div></div></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6"><h6>Customer-wise Distribution</h6>
+        <ul class="list-group"><li class="list-group-item d-flex justify-content-between" th:each="e : ${customerDistribution}"><span th:text="${e.key}"></span><span th:text="${e.value}"></span></li></ul></div>
+      <div class="col-md-6"><h6>Status Distribution</h6>
+        <ul class="list-group"><li class="list-group-item d-flex justify-content-between" th:each="e : ${statusDistribution}"><span th:text="${e.key}"></span><span th:text="${e.value}"></span></li></ul></div>
+    </div>
+    <div class="row g-3 mt-1">
+      <div class="col-md-6"><h6>Upcoming Production Dates</h6>
+        <ul class="list-group"><li class="list-group-item" th:each="t : ${upcomingProductionDates}"><a th:href="@{'/tickets/' + ${t.id}}" th:text="${t.ticketNumber} + ' - ' + ${t.estimatedProductionDate}"></a></li></ul></div>
+      <div class="col-md-6"><h6>Missed Production Dates</h6>
+        <ul class="list-group"><li class="list-group-item text-danger" th:each="t : ${missedProductionDates}"><a th:href="@{'/tickets/' + ${t.id}}" th:text="${t.ticketNumber} + ' - ' + ${t.estimatedProductionDate}"></a></li></ul></div>
+    </div>
+    <h6 class="mt-3">Recent Imports</h6>
+    <ul class="list-group">
+      <li class="list-group-item" th:each="b : ${recentImports}" th:text="${b.originalFileName} + ' — ' + ${b.processingResult}"></li>
+    </ul>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
