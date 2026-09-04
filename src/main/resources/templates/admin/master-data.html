@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Master Data - Activation Education EForms</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div class="d-flex">
+  <div th:replace="~{fragments/layout :: sidebar}"></div>
+  <div class="ae-content flex-grow-1">
+    <h4 class="mb-3">Master Data Management</h4>
+    <ul class="nav nav-tabs">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#mCustomers">Customers</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mTeams">Teams</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mStatuses">Statuses</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mAging">Aging Thresholds</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mSla">SLA Thresholds</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mRisk">Risk Weights</button></li>
+    </ul>
+    <div class="tab-content card p-3">
+      <div class="tab-pane fade show active" id="mCustomers">
+        <table class="table table-sm"><thead><tr><th>Name</th><th>Category</th><th>Active</th><th></th></tr></thead>
+        <tbody><tr th:each="c : ${customers}">
+          <td th:text="${c.customerName}"></td><td th:text="${c.customerCategory}"></td>
+          <td th:text="${c.active}"></td>
+          <td><form method="post" th:action="@{'/master-data/customers/' + ${c.id} + '/toggle'}"><button class="btn btn-sm btn-outline-secondary">Toggle Active</button></form></td>
+        </tr></tbody></table>
+      </div>
+      <div class="tab-pane fade" id="mTeams">
+        <table class="table table-sm"><thead><tr><th>Team</th><th>Type</th><th>Active</th><th></th></tr></thead>
+        <tbody><tr th:each="t : ${teams}">
+          <td th:text="${t.teamName}"></td><td th:text="${t.teamType}"></td><td th:text="${t.active}"></td>
+          <td><form method="post" th:action="@{'/master-data/teams/' + ${t.id} + '/toggle'}"><button class="btn btn-sm btn-outline-secondary">Toggle Active</button></form></td>
+        </tr></tbody></table>
+      </div>
+      <div class="tab-pane fade" id="mStatuses">
+        <table class="table table-sm"><thead><tr><th>Status</th><th>Terminal</th><th>Open</th></tr></thead>
+        <tbody><tr th:each="s : ${statuses}"><td th:text="${s.displayName}"></td><td th:text="${s.terminal}"></td><td th:text="${s.open}"></td></tr></tbody></table>
+      </div>
+      <div class="tab-pane fade" id="mAging">
+        <table class="table table-sm"><thead><tr><th>Bucket</th><th>Min Days</th><th>Max Days</th><th>Label</th></tr></thead>
+        <tbody><tr th:each="a : ${agingThresholds}"><td th:text="${a.bucketCode}"></td><td th:text="${a.minDays}"></td><td th:text="${a.maxDays}"></td><td th:text="${a.label}"></td></tr></tbody></table>
+      </div>
+      <div class="tab-pane fade" id="mSla">
+        <table class="table table-sm"><thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead>
+        <tbody><tr th:each="s : ${slaThresholds}"><td th:text="${s.configKey}"></td><td th:text="${s.configValue}"></td><td th:text="${s.description}"></td></tr></tbody></table>
+      </div>
+      <div class="tab-pane fade" id="mRisk">
+        <table class="table table-sm"><thead><tr><th>Factor</th><th>Weight</th></tr></thead>
+        <tbody><tr th:each="r : ${riskWeights}"><td th:text="${r.factorLabel}"></td><td th:text="${r.weight}"></td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
