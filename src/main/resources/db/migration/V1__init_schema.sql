@@ -440,7 +440,7 @@ CREATE INDEX idx_batch_checksum ON import_batches(checksum);
 CREATE TABLE import_batch_rows (
     id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
     batch_id            BIGINT NOT NULL,
-    row_number          INT NOT NULL,
+    `row_number`        INT NOT NULL,
     ticket_number        VARCHAR(60),
     crm_id              VARCHAR(60),
     raw_data_json       TEXT,
