@@ -363,4 +363,194 @@ public class ExcelImportServiceImpl implements ExcelImportService {
     }
 
     private void applyTypeIfPresent(String typeName, Ticket ticket) {
-        if (StringUtils.isBlank(typeName)) 
+        if (StringUtils.isBlank(typeName)) return;
+        ticketTypeMasterRepository.findByTypeCode(normalizeCode(typeName)).ifPresent(ticket::setTicketType);
+    }
+    private void applyPriorityIfPresent(String priorityName, Ticket ticket) {
+        if (StringUtils.isBlank(priorityName)) return;
+        priorityMasterRepository.findByPriorityCode(normalizeCode(priorityName)).ifPresent(ticket::setPriority);
+    }
+    private void applySeverityIfPresent(String severityName, Ticket ticket) {
+        if (StringUtils.isBlank(severityName)) return;
+        severityMasterRepository.findBySeverityCode(normalizeCode(severityName)).ifPresent(ticket::setSeverity);
+    }
+    private void applyTeamsIfPresent(String sourceTeamName, String dependencyTeamName, Ticket ticket) {
+        if (StringUtils.isNotBlank(sourceTeamName)) {
+            teamMasterRepository.findByTeamCode(normalizeCode(sourceTeamName)).ifPresent(ticket::setSourceTeam);
+        }
+        if (StringUtils.isNotBlank(dependencyTeamName)) {
+            teamMasterRepository.findByTeamCode(normalizeCode(dependencyTeamName)).ifPresent(ticket::setDependencyTeam);
+        }
+    }
+    private String normalizeCode(String value) {
+        return value.trim().toUpperCase().replaceAll("[\\s-]+", "_");
+    }
+
+    private boolean hasChanges(Ticket existing, Map<String, String> data) {
+        if (StringUtils.isNotBlank(data.get("Ticket Title")) && !data.get("Ticket Title").equals(existing.getTicketTitle())) {
+            return true;
+        }
+        String assignedUserValue = StringUtils.trimToNull(data.get("Assigned User"));
+        if (assignedUserValue != null) {
+            boolean matchesCurrentByFullName = existing.getAssignedUser() != null
+                    && assignedUserValue.equalsIgnoreCase(existing.getAssignedUser().getFullName());
+            boolean matchesCurrentByUsername = existing.getAssignedUser() != null
+                    && assignedUserValue.equalsIgnoreCase(existing.getAssignedUser().getUsername());
+            if (existing.getAssignedUser() == null || (!matchesCurrentByFullName && !matchesCurrentByUsername)) {
+                return true;
+            }
+        }
+        String currentStatusIncoming = StringUtils.trimToNull(data.get("Current Status"));
+        if (currentStatusIncoming != null && existing.getCurrentStatus() != null
+                && !normalizeCode(currentStatusIncoming).equals(existing.getCurrentStatus().getStatusCode())) {
+            return true;
+        }
+        return false;
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessValidationException("Please select an Excel file to upload.");
+        }
+        String filename = file.getOriginalFilename();
+        if (filename == null || !(filename.toLowerCase().endsWith(".xlsx") || filename.toLowerCase().endsWith(".xls"))) {
+            throw new BusinessValidationException("Only .xlsx or .xls files are supported for ticket import.");
+        }
+        String contentType = file.getContentType();
+        boolean validContentType = contentType != null && (
+                contentType.contains("spreadsheet") || contentType.contains("excel") || contentType.equals("application/octet-stream"));
+        if (!validContentType) {
+            throw new BusinessValidationException("The uploaded file does not appear to be a valid Excel file.");
+        }
+        long maxBytes = 10L * 1024 * 1024;
+        if (file.getSize() > maxBytes) {
+            throw new BusinessValidationException("Import file exceeds the maximum allowed size of 10 MB.");
+        }
+    }
+
+    private void validateHeaders(Sheet sheet) {
+        Row headerRow = sheet.getRow(0);
+        if (headerRow == null) {
+            throw new BusinessValidationException("The uploaded file does not contain a header row.");
+        }
+        List<String> missing = new ArrayList<>();
+        for (int i = 0; i < REQUIRED_HEADERS.length; i++) {
+            Cell cell = headerRow.getCell(i);
+            String value = cell == null ? "" : cell.getStringCellValue().trim();
+            if (!REQUIRED_HEADERS[i].equalsIgnoreCase(value)) missing.add(REQUIRED_HEADERS[i]);
+        }
+        if (!missing.isEmpty()) {
+            throw new BusinessValidationException(
+                    "The uploaded file is missing or has misordered required column(s): " + String.join(", ", missing)
+                    + ". Please use the provided import template.");
+        }
+    }
+
+    private boolean isRowBlank(Row row) {
+        for (Cell cell : row) {
+            if (cell != null && cell.getCellType() != CellType.BLANK && StringUtils.isNotBlank(getCellAsString(cell))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Map<String, String> extractRowData(Row row) {
+        Map<String, String> data = new LinkedHashMap<>();
+        for (int i = 0; i < REQUIRED_HEADERS.length; i++) {
+            Cell cell = row.getCell(i);
+            data.put(REQUIRED_HEADERS[i], StringUtils.trimToEmpty(getCellAsString(cell)));
+        }
+        return data;
+    }
+
+    private String getCellAsString(Cell cell) {
+        if (cell == null) return "";
+        switch (cell.getCellType()) {
+            case STRING: return cell.getStringCellValue();
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getLocalDateTimeCellValue().toLocalDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                }
+                double d = cell.getNumericCellValue();
+                return d == Math.floor(d) ? String.valueOf((long) d) : String.valueOf(d);
+            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA: return cell.getCellFormula();
+            default: return "";
+        }
+    }
+
+    private LocalDate parseDateSafely(String value, List<String> errors, String fieldLabel) {
+        if (StringUtils.isBlank(value)) return null;
+        for (DateTimeFormatter fmt : DATE_FORMATS) {
+            try { return LocalDate.parse(value.trim(), fmt); }
+            catch (Exception ignored) { }
+        }
+        errors.add("Invalid date format for " + fieldLabel + ": '" + value + "'.");
+        return null;
+    }
+
+    @Override
+    public ByteArrayOutputStream generateImportTemplate() {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Ticket Import Template");
+            Row header = sheet.createRow(0);
+            CellStyle headerStyle = workbook.createCellStyle();
+            org.apache.poi.ss.usermodel.Font font = workbook.createFont();
+            font.setBold(true);
+            headerStyle.setFont(font);
+            headerStyle.setFillForegroundColor(IndexedColors.PALE_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            for (int i = 0; i < REQUIRED_HEADERS.length; i++) {
+                Cell cell = header.createCell(i);
+                cell.setCellValue(REQUIRED_HEADERS[i]);
+                cell.setCellStyle(headerStyle);
+                sheet.setColumnWidth(i, 22 * 256);
+            }
+            sheet.createFreezePane(0, 1);
+
+            Row example = sheet.createRow(1);
+            String[] sample = {"EF-TICKET-0001", "CRM-100234", "Sample University", "Premium",
+                    "Sample ticket title", "Sample description of the requirement", "BUG", "P2_HIGH",
+                    "SEV2_MAJOR", "Prashant Chaturvedi", "01-09-2026", "01-09-2026", "10-09-2026", "15-09-2026",
+                    "WORK_IN_PROGRESS", "AE_EFORMS", "FRAMEWORK", "Example remark"};
+            for (int i = 0; i < sample.length; i++) example.createCell(i).setCellValue(sample[i]);
+            workbook.write(out);
+            return out;
+        } catch (IOException e) {
+            throw new BusinessValidationException("Failed to generate the import template.");
+        }
+    }
+
+    @Override
+    public ByteArrayOutputStream exportRejectedRows(Long batchId) {
+        List<ImportBatchRow> rejectedRows = importBatchRowRepository.findByBatch_IdAndRowClassification(batchId, ImportBatchRow.INVALID);
+        rejectedRows.addAll(importBatchRowRepository.findByBatch_IdAndRowClassification(batchId, ImportBatchRow.DUPLICATE_IN_FILE));
+
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Rejected Rows");
+            Row header = sheet.createRow(0);
+            String[] cols = Arrays.copyOf(REQUIRED_HEADERS, REQUIRED_HEADERS.length + 1);
+            cols[REQUIRED_HEADERS.length] = "Error Reason";
+            for (int i = 0; i < cols.length; i++) header.createCell(i).setCellValue(cols[i]);
+            sheet.createFreezePane(0, 1);
+
+            int rowIdx = 1;
+            for (ImportBatchRow row : rejectedRows) {
+                Row excelRow = sheet.createRow(rowIdx++);
+                try {
+                    Map<String, String> data = objectMapper.readValue(row.getRawDataJson(), Map.class);
+                    for (int i = 0; i < REQUIRED_HEADERS.length; i++) {
+                        excelRow.createCell(i).setCellValue(data.getOrDefault(REQUIRED_HEADERS[i], ""));
+                    }
+                } catch (Exception ignored) { }
+                excelRow.createCell(REQUIRED_HEADERS.length).setCellValue(row.getErrorReason());
+            }
+            workbook.write(out);
+            return out;
+        } catch (IOException e) {
+            throw new BusinessValidationException("Failed to generate the rejected rows export.");
+        }
+    }
+}
