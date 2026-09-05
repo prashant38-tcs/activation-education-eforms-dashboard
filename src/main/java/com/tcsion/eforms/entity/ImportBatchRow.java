@@ -16,7 +16,7 @@ public class ImportBatchRow {
     private Long id;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "batch_id", nullable = false)
     private ImportBatch batch;
-    @Column(name = "row_number", nullable = false)
+    @Column(name = "`row_number`", nullable = false)
     private int rowNumber;
     @Column(name = "ticket_number", length = 60)
     private String ticketNumber;
